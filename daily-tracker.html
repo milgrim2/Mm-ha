@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RMiLLi Daily Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Orbitron:wght@700;900&display=swap');
+
+  :root {
+    --teal: #00c8c8;
+    --orange: #e06418;
+    --bg: #030d12;
+    --card: #0a1a20;
+    --border: rgba(0,200,200,0.15);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  body {
+    background: var(--bg);
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(180deg, rgba(0,200,200,0.08) 0%, transparent 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 16px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background-color: rgba(3,13,18,0.95);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 900;
+  }
+  .logo .r { color: var(--orange); }
+  .logo .m { color: var(--teal); }
+
+  .date-badge {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    text-align: right;
+  }
+
+  .day-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    color: var(--teal);
+    letter-spacing: 2px;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--teal), var(--orange));
+    transition: width 0.4s ease;
+    box-shadow: 0 0 8px rgba(0,200,200,0.4);
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .progress-text {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+  }
+
+  .progress-pct {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    color: var(--teal);
+  }
+
+  /* ── CONTENT ── */
+  .content { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* ── SECTION CARD ── */
+  .section-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(0,200,200,0.08);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .section-icon { font-size: 18px; }
+
+  .section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    flex: 1;
+  }
+
+  .section-count {
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 1px;
+  }
+
+  .section-count.done { color: var(--teal); }
+
+  .section-body { padding: 8px 0; }
+
+  /* ── TASK ITEM ── */
+  .task {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+  }
+
+  .task:active { background: rgba(0,200,200,0.04); }
+  .task.urgent { background: rgba(255,50,50,0.03); }
+
+  .task-check {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 2px solid rgba(0,200,200,0.3);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-top: 1px;
+  }
+
+  .task.checked .task-check {
+    background: var(--teal);
+    border-color: var(--teal);
+    box-shadow: 0 0 10px rgba(0,200,200,0.4);
+  }
+
+  .task.checked.orange .task-check {
+    background: var(--orange);
+    border-color: var(--orange);
+    box-shadow: 0 0 10px rgba(220,100,20,0.4);
+  }
+
+  .task-check-icon {
+    color: #000;
+    font-size: 14px;
+    font-weight: 900;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .task.checked .task-check-icon { opacity: 1; }
+
+  .task-info { flex: 1; }
+
+  .task-label {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: color 0.2s, opacity 0.2s;
+  }
+
+  .task.checked .task-label {
+    color: rgba(255,255,255,0.35);
+    text-decoration: line-through;
+    text-decoration-color: rgba(255,255,255,0.2);
+  }
+
+  .task-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  .task-urgent-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #ff4444;
+    box-shadow: 0 0 6px #ff4444;
+    margin-top: 9px;
+    flex-shrink: 0;
+    animation: urgentBlink 1.5s ease-in-out infinite;
+  }
+
+  @keyframes urgentBlink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ── SPECIAL: CPAP TRACKER ── */
+  .cpap-tracker {
+    padding: 14px 16px;
+    border-top: 1px solid rgba(0,200,200,0.08);
+  }
+
+  .cpap-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 10px;
+  }
+
+  .cpap-hours {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .hour-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    border: 1px solid rgba(0,200,200,0.2);
+    background: rgba(0,0,0,0.3);
+    color: rgba(255,255,255,0.4);
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .hour-btn span { font-size: 8px; letter-spacing: 1px; color: rgba(255,255,255,0.25); }
+
+  .hour-btn.selected {
+    border-color: var(--teal);
+    background: rgba(0,200,200,0.12);
+    color: var(--teal);
+    box-shadow: 0 0 10px rgba(0,200,200,0.2);
+  }
+
+  .hour-btn.selected span { color: rgba(0,200,200,0.6); }
+
+  .hour-btn.good {
+    border-color: #00ff88;
+    background: rgba(0,255,136,0.1);
+    color: #00ff88;
+    box-shadow: 0 0 10px rgba(0,255,136,0.2);
+  }
+
+  /* ── WATER TRACKER ── */
+  .water-tracker {
+    padding: 14px 16px;
+  }
+
+  .water-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 10px;
+  }
+
+  .water-bottles {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .water-btn {
+    width: 44px;
+    height: 52px;
+    border-radius: 8px;
+    border: 1px solid rgba(0,150,200,0.2);
+    background: rgba(0,0,0,0.3);
+    color: rgba(255,255,255,0.3);
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .water-btn.filled {
+    border-color: #4488ff;
+    background: rgba(68,136,255,0.12);
+    box-shadow: 0 0 8px rgba(68,136,255,0.2);
+  }
+
+  /* ── MOOD CHECK ── */
+  .mood-wrap {
+    padding: 14px 16px;
+    border-top: 1px solid rgba(0,200,200,0.08);
+  }
+
+  .mood-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 10px;
+  }
+
+  .mood-buttons {
+    display: flex;
+    gap: 8px;
+  }
+
+  .mood-btn {
+    flex: 1;
+    padding: 10px 4px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.3);
+    font-size: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .mood-btn span {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .mood-btn.selected {
+    border-color: var(--teal);
+    background: rgba(0,200,200,0.08);
+    box-shadow: 0 0 10px rgba(0,200,200,0.15);
+  }
+
+  .mood-btn.selected span { color: var(--teal); }
+
+  /* ── STREAM DAY BADGE ── */
+  .stream-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(220,100,20,0.1);
+    border: 1px solid rgba(220,100,20,0.3);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--orange);
+    text-transform: uppercase;
+    margin: 0 16px 10px;
+  }
+
+  .stream-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--orange);
+    animation: urgentBlink 1.5s ease-in-out infinite;
+  }
+
+  .gym-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,200,200,0.08);
+    border: 1px solid rgba(0,200,200,0.25);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--teal);
+    text-transform: uppercase;
+    margin: 0 16px 10px;
+  }
+
+  /* ── STREAK COUNTER ── */
+  .streak-wrap {
+    background: linear-gradient(135deg, rgba(0,200,200,0.08), rgba(220,100,20,0.06));
+    border: 1px solid rgba(0,200,200,0.2);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .streak-info { display: flex; flex-direction: column; gap: 2px; }
+
+  .streak-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .streak-count {
+    font-family: 'Orbitron', monospace;
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--teal);
+    text-shadow: 0 0 20px rgba(0,200,200,0.4);
+    line-height: 1;
+  }
+
+  .streak-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 1px;
+  }
+
+  .streak-emoji { font-size: 40px; }
+
+  /* ── RESET BUTTON ── */
+  .reset-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    color: rgba(255,255,255,0.25);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .reset-btn:active {
+    background: rgba(255,50,50,0.08);
+    border-color: rgba(255,50,50,0.3);
+    color: rgba(255,100,100,0.7);
+  }
+
+  /* ── DIVIDER ── */
+  .task-divider {
+    height: 1px;
+    background: rgba(0,200,200,0.06);
+    margin: 0 16px;
+  }
+
+  /* Celebration */
+  .celebrate {
+    text-align: center;
+    padding: 20px 16px;
+    display: none;
+  }
+
+  .celebrate.show { display: block; }
+
+  .celebrate-emoji { font-size: 48px; margin-bottom: 8px; }
+
+  .celebrate-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    color: var(--teal);
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo"><span class="r">R</span><span class="m">MiLLi</span></div>
+      <div class="day-label" id="dayLabel">LOADING...</div>
+    </div>
+    <div class="date-badge">
+      <div id="dateLabel">—</div>
+      <div style="margin-top:2px;font-size:10px;">Daily Tracker</div>
+    </div>
+  </div>
+  <div class="progress-label">
+    <span class="progress-text">Daily Progress</span>
+    <span class="progress-pct" id="progressPct">0%</span>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="content" id="content">
+
+  <!-- Streak -->
+  <div class="streak-wrap">
+    <div class="streak-info">
+      <div class="streak-label">CPAP Streak</div>
+      <div class="streak-count" id="streakCount">0</div>
+      <div class="streak-sub">consecutive nights</div>
+    </div>
+    <div class="streak-emoji" id="streakEmoji">😴</div>
+  </div>
+
+  <!-- NON NEGOTIABLES -->
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection('nonneg')">
+      <div class="section-icon">⚡</div>
+      <div class="section-title" style="color:var(--orange)">Non-Negotiables</div>
+      <div class="section-count" id="count-nonneg">0/5</div>
+    </div>
+    <div class="section-body" id="body-nonneg">
+
+      <!-- CPAP -->
+      <div class="task urgent" id="task-cpap" onclick="toggleTask('cpap')">
+        <div class="task-check"><div class="task-check-icon">✓</div></div>
+        <div class="task-info">
+          <div class="task-label">Use CPAP tonight</div>
+          <div class="task-sub">Minimum 4 hours — non-negotiable for heart health</div>
+        </div>
+        <div class="task-urgent-dot"></div>
+      </div>
+
+      <div class="cpap-tracker">
+        <div class="cpap-label">How many hours did you use it last night?</div>
+        <div class="cpap-hours">
+          <div class="hour-btn" id="cpap-0" onclick="setCpap(0)">0<span>hrs</span></div>
+          <div class="hour-btn" id="cpap-1" onclick="setCpap(1)">1<span>hrs</span></div>
+          <div class="hour-btn" id="cpap-2" onclick="setCpap(2)">2<span>hrs</span></div>
+          <div class="hour-btn" id="cpap-3" onclick="setCpap(3)">3<span>hrs</span></div>
+          <div class="hour-btn good" id="cpap-4" onclick="setCpap(4)">4<span>hrs ✓</span></div>
+          <div class="hour-btn good" id="cpap-5" onclick="setCpap(5)">5<span>hrs</span></div>
+          <div class="hour-btn good" id="cpap-6" onclick="setCpap(6)">6<span>hrs</span></div>
+          <div class="hour-btn good" id="cpap-7" onclick="setCpap(7)">7+<span>hrs</span></div>
+        </div>
+      </div>
+
+      <div class="task-divider"></div>
+
+      <div class="task" id="task-protein" onclick="toggleTask('protein')">
+        <div class="task-check"><div class="task-check-icon">✓</div></div>
+        <div class="task-info">
+          <div class="task-label">Protein at every meal</div>
+          <div class="task-sub">Chicken, eggs, Greek yogurt, protein bar, or shake</div>
+        </div>
+      </div>
+
+      <div class="task-divider"></div>
+
+      <div class="task" id="task-water" onclick="toggleTask('water')">
+        <div class="task-check"><div class="task-check-icon">✓</div></div>
+        <div class="task-info">
+          <div class="task-label">Water bottle in the car</div>
+          <div class="task-sub">Aim for a bottle per hour while driving</div>
+        </div>
+      </div>
+
+      <div class="water-tracker">
+        <div class="water-label">Bottles of water today</div>
+        <div class="water-bottles" id="waterBtns"></div>
+      </div>
+
+      <div class="task-divider"></div>
+
+      <div class="task" id="task-phone" onclick="toggleTask('phone')">
+        <div class="task-check"><div class="task-check-icon">✓</div></div>
+        <div class="task-info">
+          <div class="task-label">Phone down after stream</div>
+          <div class="task-sub">No scrolling after streaming — sleep faster</div>
+        </div>
+      </div>
+
+      <div class="task-divider"></div>
+
+      <div class="task" id="task-meds" onclick="toggleTask('meds')">
+        <div class="task-check orange"><div class="task-check-icon">✓</div></div>
+        <div class="task-info">
+          <div class="task-label">Take all medications</div>
+          <div class="task-sub">Anxiety, depression, cholesterol, baby aspirin, Zepbound</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HEALTH -->
+  <div class="section-card" id="gymSection">
+    <div class="section-header" onclick="toggleSection('health')">
+      <div class="section-icon">💪</div>
+      <div class="section-title" style="color:var(--teal)">Health & Body</div>
+      <div class="section-count" id="count-health">0/3</div>
+    </div>
+    <div class="section-body" id="body-health">
+
+      <div id="gymBadge" style="display:none">
+        <div class="gym-badge"><span>🏋️</span> Gym Day</div>
+      </div>
+
+      <div class="task" id="task-gym" onclick="toggleTask('gym')">
+        <div class="task-check"><div class="task-check-icon">✓</div></div>
+        <div class="task-info">
+          <div class="task-label" id="gymLabel">Gym — 45-60 min</div>
+          <div class="task-sub">Full body: squat, press, pull, shoulders, core + 15 min incline walk</div>
+        </div>
+      </div>
+
+      <div class="task-divider"></div>
+
+      <div class="task" id="task-veggie" onclick="toggleTask('veggie')">
+        <div class="task-check"><div class="task-check-icon">✓</div></div>
+        <div class="task-info">
+          <div class="task-label">One vegetable today</div>
+          <div class="task-sub">Anything counts — just one</div>
+        </div>
+      </div>
+
+      <div class="task-divider"></div>
+
+      <div class="task" id="task-nojunk" onclick="toggleTask('nojunk')">
+        <div class="task-check"><div class="task-check-icon">✓</div></div>
+        <div class="task-info">
+          <div class="task-label">No fast food today</div>
+          <div class="task-sub">Prepped food, grocery store, or protein bar instead</div>
+        </div>
+      </div>
+
+      <div class="mood-wrap">
+        <div class="mood-label">How are you feeling today?</div>
+        <div class="mood-buttons">
+          <div class="mood-btn" id="mood-1" onclick="setMood(1)">😴<span>Wrecked</span></div>
+          <div class="mood-btn" id="mood-2" onclick="setMood(2)">😐<span>Meh</span></div>
+          <div class="mood-btn" id="mood-3" onclick="setMood(3)">🙂<span>OK</span></div>
+          <div class="mood-btn" id="mood-4" onclick="setMood(4)">😄<span>Good</span></div>
+          <div class="mood-btn" id="mood-5" onclick="setMood(5)">🔥<span>Locked</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection('content')">
+      <div class="section-icon">🎮</div>
+      <div class="section-title" style="color:var(--teal)">Content & Stream</div>
+      <div class="section-count" id="count-content">0/3</div>
+    </div>
+    <div class="section-body" id="body-content">
+
+      <div id="streamBadge" style="display:none">
+        <div class="stream-badge"><div class="stream-dot"></div>Stream Night</div>
+      </div>
+
+      <div class="task" id="task-stream" onclick="toggleTask('stream')">
+        <div class="task-check orange"><div class="task-check-icon">✓</div></div>
+        <div class="task-info">
+          <div class="task-label" id="streamLabel">Stream tonight — 10PM</div>
+          <div class="task-sub" id="streamSub">Check OBS, alerts, starting soon screen</div>
+        </div>
+      </div>
+
+      <div class="task-divider"></div>
+
+      <div class="task" id="task-clip" onclick="toggleTask('clip')">
+        <div class="task-check"><div class="task-check-icon">✓</div></div>
+        <div class="task-info">
+          <div class="task-label">Post one TikTok clip</div>
+          <div class="task-sub">Even on off nights — one clip keeps the algorithm fed</div>
+        </div>
+      </div>
+
+      <div class="task-divider"></div>
+
+      <div class="task" id="task-obs" onclick="toggleTask('obs')">
+        <div class="task-check"><div class="task-check-icon">✓</div></div>
+        <div class="task-info">
+          <div class="task-label">OBS scene check</div>
+          <div class="task-sub">Starting soon, alerts, overlay, webcam all working</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FAMILY / REST -->
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection('family')">
+      <div class="section-icon">👨‍👩‍👧</div>
+      <div class="section-title" style="color:rgba(255,255,255,0.6)">Family & Rest</div>
+      <div class="section-count" id="count-family">0/2</div>
+    </div>
+    <div class="section-body" id="body-family">
+
+      <div class="task" id="task-family" onclick="toggleTask('family')">
+        <div class="task-check"><div class="task-check-icon">✓</div></div>
+        <div class="task-info">
+          <div class="task-label">Quality time with the kids</div>
+          <div class="task-sub">Even 20 minutes of intentional time counts</div>
+        </div>
+      </div>
+
+      <div class="task-divider"></div>
+
+      <div class="task" id="task-stress" onclick="toggleTask('stress')">
+        <div class="task-check"><div class="task-check-icon">✓</div></div>
+        <div class="task-info">
+          <div class="task-label">One stress relief moment</div>
+          <div class="task-sub">5 min walk, deep breaths, quiet — anything that resets you</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Celebration -->
+  <div class="celebrate" id="celebrate">
+    <div class="celebrate-emoji">🔥</div>
+    <div class="celebrate-text">Full Day Complete!</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.3);margin-top:8px;letter-spacing:1px;">You showed up for yourself today.</div>
+  </div>
+
+  <!-- Reset -->
+  <button class="reset-btn" onclick="confirmReset()">Reset Today's Checklist</button>
+
+</div>
+
+<script>
+  const TASKS = ['cpap','protein','water','phone','meds','gym','veggie','nojunk','stream','clip','obs','family','stress'];
+  const SECTIONS = {
+    nonneg: ['cpap','protein','water','phone','meds'],
+    health: ['gym','veggie','nojunk'],
+    content: ['stream','clip','obs'],
+    family: ['family','stress']
+  };
+
+  // Days config
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const SHORT = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const GYM_DAYS = [1,3,5]; // Mon, Wed, Fri
+  const STREAM_DAYS = [1,2,4,5,6]; // Mon,Tue,Thu,Fri,Sat
+  const POWER_NIGHTS = [5,6]; // Fri, Sat
+  const OFF_DAYS = [0,3]; // Sun, Wed — no stream
+
+  let state = {};
+
+  function getKey() {
+    return 'rmilli-' + new Date().toDateString();
+  }
+
+  function loadState() {
+    try {
+      const saved = localStorage.getItem(getKey());
+      if (saved) state = JSON.parse(saved);
+      else resetState();
+    } catch(e) { resetState(); }
+  }
+
+  function resetState() {
+    state = {
+      tasks: {},
+      cpapHours: null,
+      waterCount: 0,
+      mood: null,
+      streak: parseInt(localStorage.getItem('rmilli-streak') || '0')
+    };
+    TASKS.forEach(t => state.tasks[t] = false);
+    saveState();
+  }
+
+  function saveState() {
+    try { localStorage.setItem(getKey(), JSON.stringify(state)); } catch(e) {}
+  }
+
+  function getToday() { return new Date().getDay(); }
+
+  function setupDayContext() {
+    const day = getToday();
+    const now = new Date();
+
+    document.getElementById('dayLabel').textContent = SHORT[day] + ' — ' + DAYS[day].toUpperCase();
+    document.getElementById('dateLabel').textContent = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+
+    // Gym badge
+    const isGym = GYM_DAYS.includes(day);
+    document.getElementById('gymBadge').style.display = isGym ? 'block' : 'none';
+    document.getElementById('gymLabel').textContent = isGym ? 'Gym — 45-60 min' : 'Gym (not today — rest day)';
+
+    // Stream badge + label
+    const isStream = STREAM_DAYS.includes(day);
+    const isPower = POWER_NIGHTS.includes(day);
+    document.getElementById('streamBadge').style.display = isStream ? 'block' : 'none';
+
+    if (!isStream) {
+      document.getElementById('streamLabel').textContent = 'No stream tonight — rest day';
+      document.getElementById('streamSub').textContent = 'Edit clips, rest, or prep for tomorrow';
+    } else if (isPower) {
+      document.getElementById('streamLabel').textContent = 'Power stream tonight — 10PM';
+      document.getElementById('streamSub').textContent = 'Friday/Saturday — go until 2-3AM if energy allows';
+    } else {
+      document.getElementById('streamLabel').textContent = 'Stream tonight — 10PM';
+      document.getElementById('streamSub').textContent = 'Check OBS, alerts, starting soon screen';
+    }
+  }
+
+  function toggleTask(id) {
+    state.tasks[id] = !state.tasks[id];
+    saveState();
+    renderTask(id);
+    updateProgress();
+    updateSectionCounts();
+    checkCelebrate();
+  }
+
+  function renderTask(id) {
+    const el = document.getElementById('task-' + id);
+    if (!el) return;
+    if (state.tasks[id]) el.classList.add('checked');
+    else el.classList.remove('checked');
+  }
+
+  function setCpap(hours) {
+    state.cpapHours = hours;
+    saveState();
+
+    // Update streak
+    if (hours >= 4) {
+      state.streak = (state.streak || 0) + 1;
+      localStorage.setItem('rmilli-streak', state.streak);
+    } else if (hours === 0) {
+      state.streak = 0;
+      localStorage.setItem('rmilli-streak', '0');
+    }
+
+    renderCpap();
+    renderStreak();
+  }
+
+  function renderCpap() {
+    for (let i = 0; i <= 7; i++) {
+      const btn = document.getElementById('cpap-' + i);
+      if (!btn) continue;
+      btn.classList.remove('selected');
+      if (state.cpapHours === i) btn.classList.add('selected');
+    }
+  }
+
+  function setWater(count) {
+    state.waterCount = count;
+    saveState();
+    renderWater();
+  }
+
+  function renderWater() {
+    const container = document.getElementById('waterBtns');
+    container.innerHTML = '';
+    for (let i = 1; i <= 8; i++) {
+      const btn = document.createElement('div');
+      btn.className = 'water-btn' + (i <= state.waterCount ? ' filled' : '');
+      btn.textContent = '💧';
+      btn.onclick = () => setWater(i === state.waterCount ? 0 : i);
+      container.appendChild(btn);
+    }
+  }
+
+  function setMood(level) {
+    state.mood = level;
+    saveState();
+    renderMood();
+  }
+
+  function renderMood() {
+    for (let i = 1; i <= 5; i++) {
+      const btn = document.getElementById('mood-' + i);
+      if (!btn) continue;
+      if (state.mood === i) btn.classList.add('selected');
+      else btn.classList.remove('selected');
+    }
+  }
+
+  function renderStreak() {
+    const count = state.streak || 0;
+    document.getElementById('streakCount').textContent = count;
+    const emojis = ['😴','😐','🙂','💪','🔥','⚡','🏆'];
+    const idx = Math.min(Math.floor(count / 2), emojis.length - 1);
+    document.getElementById('streakEmoji').textContent = emojis[idx];
+  }
+
+  function toggleSection(id) {
+    const body = document.getElementById('body-' + id);
+    body.style.display = body.style.display === 'none' ? 'block' : body.style.display === '' ? 'none' : body.style.display;
+    // Default open
+  }
+
+  function updateSectionCounts() {
+    Object.entries(SECTIONS).forEach(([section, tasks]) => {
+      const done = tasks.filter(t => state.tasks[t]).length;
+      const el = document.getElementById('count-' + section);
+      if (!el) return;
+      el.textContent = `${done}/${tasks.length}`;
+      el.className = 'section-count' + (done === tasks.length ? ' done' : '');
+    });
+  }
+
+  function updateProgress() {
+    const total = TASKS.length;
+    const done = TASKS.filter(t => state.tasks[t]).length;
+    const pct = Math.round((done / total) * 100);
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressPct').textContent = pct + '%';
+  }
+
+  function checkCelebrate() {
+    const done = TASKS.filter(t => state.tasks[t]).length;
+    const cel = document.getElementById('celebrate');
+    if (done === TASKS.length) cel.classList.add('show');
+    else cel.classList.remove('show');
+  }
+
+  function confirmReset() {
+    if (confirm('Reset today\'s checklist? This will clear all checkmarks for today.')) {
+      TASKS.forEach(t => state.tasks[t] = false);
+      state.cpapHours = null;
+      state.waterCount = 0;
+      state.mood = null;
+      saveState();
+      renderAll();
+    }
+  }
+
+  function renderAll() {
+    TASKS.forEach(t => renderTask(t));
+    renderCpap();
+    renderWater();
+    renderMood();
+    renderStreak();
+    updateProgress();
+    updateSectionCounts();
+    checkCelebrate();
+  }
+
+  // Init
+  loadState();
+  setupDayContext();
+  renderAll();
+
+  // Auto-reset at midnight
+  function checkMidnightReset() {
+    const key = getKey();
+    const lastKey = localStorage.getItem('rmilli-last-day');
+    if (lastKey && lastKey !== key) {
+      resetState();
+      renderAll();
+    }
+    localStorage.setItem('rmilli-last-day', key);
+  }
+
+  setInterval(checkMidnightReset, 60000);
+  checkMidnightReset();
+</script>
+</body>
+</html>
